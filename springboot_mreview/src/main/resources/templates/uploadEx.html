@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<body>
+
+<input type="file" name="uploadFiles" multiple>
+<button class="uploadBtn">Upload</button>
+
+<div class="uploadResult">
+
+</div>
+
+
+<script src="https://code.jquery.com/jquery-3.7.0.min.js"
+        integrity="sha256-2Pmvv0kuTBOenSvLm6bvfBSSHrUJ+3A7x6P5Ebd07/g="
+        crossorigin="anonymous"></script>
+<script>
+    $('.uploadBtn').click(function () {
+        let formData = new FormData();
+        let inputFile = $("input[type='file']");
+        let files = inputFile[0].files;
+
+        for (let i = 0; i < files.length; i++) {
+            console.log("files.length: " + files.length)
+            console.log(files[i]);
+            formData.append("uploadFiles", files[i]);
+        }
+
+        $.ajax({
+            url: '/uploadAjax',
+            processData: false,
+            contentType: false,
+            data: formData,
+            type: 'POST',
+            dataType: 'json',
+            success: function (result) {
+                showUploadImages(result)
+            },
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.log(textStatus);
+            }
+        });
+    });
+
+    function showUploadImages(arr) {
+        console.log(arr);
+
+        let divArea = $(".uploadResult");
+
+        let str = "";
+
+        for (let i = 0; i < arr.length; i++) {
+            str += "<div>";
+            str += "<img src='/display?fileName="+arr[i].thumbnailUrl+"'>";
+            str += "<button class='removeBtn' data-name='"+arr[i].imageUrl+"'>REMOVE</button>"
+            str += "</div>";
+        }
+
+        divArea.append(str);
+    }
+
+    $('.uploadResult').on("click", ".removeBtn", function (e) {
+        let target = $(this);
+        let fileName = target.data("name");
+        let targetDiv = $(this).closest("div");
+
+        console.log(fileName);
+
+        $.ajax({
+            url: '/removeFile',
+            data: {fileName: fileName},
+            type: 'POST',
+            success: function (result) {
+                console.log(result);
+                if (result === true) {
+                    targetDiv.remove();
+                }
+            }
+        });
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,351 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<th:block th:replace="~{/layout/basic :: setContent(~{this :: content})}">
+
+  <th:block th:fragment="content">
+
+    <h1 class="mt-4">Movie Read Page</h1>
+
+    <div class="form-group">
+      <label>Title</label>
+      <input type="text" class="form-control" name="title" th:value="${dto.title}" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>Review Count </label>
+      <input type="text" class="form-control" name="reviewCnt" th:value="${dto.reviewCnt}" readonly>
+    </div>
+
+    <div class="form-group">
+      <label>AVG </label>
+      <input type="text" class="form-control" name="avg" th:value="${dto.avg}" readonly>
+    </div>
+
+    <div class="uploadResult">
+      <ul>
+        <li th:each="movieImage: ${dto.imageDtoList}" th:data-file="${movieImage.thumbnailUrl}">
+          <img th:if="${movieImage.path != null}" th:src="|/display?fileName=${movieImage.thumbnailUrl}|">
+        </li>
+      </ul>
+    </div>
+
+    <button type="button" class="btn btn-primary">
+      Review Count <span class="badge badge-light">[[${dto.reviewCnt}]]</span>
+    </button>
+
+    <button type="button" class="btn btn-info addReviewBtn">
+      Review Register
+    </button>
+
+    <a th:href="@{/movie/modify(mno=${dto.mno}, page=${pageRequestDto.page}, flag='U')}">
+      <button type="button" class="btn btn-outline-primary modifyMovieBtn">
+        Movie Modify
+      </button>
+    </a>
+
+    <button type="button" class="btn btn-danger removeMovieBtn">
+      Movie Remove
+    </button>
+
+    <div class="list-group reviewList"></div>
+
+    <div class="reviewModal modal" tabindex="-1" role="dialog">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Movie Review</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <div class="form-group">
+              <label>Reviewer ID</label>
+              <input type="text" class="form-control" name="mid">
+            </div>
+            <div>
+              <label>Grade <span class="grade"></span></label>
+              <div class="starrr"></div>
+            </div>
+            <div class="form-group">
+              <label>Review Text</label>
+              <input type="text" class="form-control" name="text" placeholder="Good Movie!">
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary reviewSaveBtn">Save changes</button>
+            <button type="button" class="btn btn-warning modifyBtn">Modify </button>
+            <button type="button" class="btn btn-danger removeBtn">Remove </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="imageModal modal" tabindex="-2" role="dialog">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Picture</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body"></div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="movieModal modal" tabindex="-2" role="dialog">
+      <div class="modal-dialog modal-lg" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <h5 class="modal-title">Remove Confirm</h5>
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+          </div>
+          <div class="modal-body">
+            <span>해당 영화를 삭제하시겠습니까?</span>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-primary movieRemoveBtn">Delete </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+
+    <style>
+      .uploadResult {
+        width: 100%;
+        background-color: gray;
+        margin-top: 10px;
+      }
+
+      .uploadResult ul {
+        display: flex;
+        flex-flow: row;
+        justify-content: center;
+        align-items: center;
+        vertical-align: top;
+        overflow: auto;
+      }
+
+      .uploadResult ul li {
+        list-style: none;
+        padding: 10px;
+        margin-left: 2em;
+      }
+
+      .uploadResult ul li img {
+        width: 100px;
+      }
+    </style>
+
+    <script th:src="@{/starrr.js}"></script>
+    <link rel="stylesheet" th:href="@{/css/starrr.css}">
+    <link rel="stylesheet" href="http://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.2.0/css/font-awesome.min.css">
+
+
+    <script>
+      $(document).ready(function (e) {
+
+        let grade = 0;
+        const mno = [[${dto.mno}]];
+
+        $('.starrr').starrr({
+          rating: grade,
+          change: function(e, value){
+            if (value) {
+              console.log(value);
+              grade = value;
+            }
+          }
+        });
+
+        // $(".reviewModal").modal("show");
+        let reviewModal = $(".reviewModal");
+        let inputMid = $('input[name="mid"]');
+        let inputText = $('input[name="text"]');
+
+        $(".addReviewBtn").click(function () {
+          inputMid.val("");
+          inputText.val("");
+
+          $(".removeBtn, .modifyBtn").hide();
+          $(".reviewSaveBtn").show();
+
+          reviewModal.modal("show");
+        });//addReviewBtn.click end
+
+        $(".reviewSaveBtn").click(function () {
+          let data = {
+            mno: mno,
+            grade: grade,
+            text: inputText.val(),
+            mid: inputMid.val()
+          };
+          console.log(data);
+
+          $.ajax({
+            url: "/reviews/" + mno,
+            type: "POST",
+            data: JSON.stringify(data),
+            contentType: "application/json; charset=utf-8",
+            dataType: "text",
+            success: function (result) {
+              console.log("result: " + result);
+              self.location.reload();
+            }
+          });
+
+          reviewModal.modal("hide");
+        });//reviewSaveBtn.click end
+
+        function getMovieReviews() {
+
+          function formatTime(str) {
+            const date = new Date(str);
+            const result = date.getFullYear() + "/" + (date.getMonth()+1) + "/" + date.getDate() + " " + date.getHours() + ":" + date.getMinutes();
+
+            return result;
+          }
+
+          $.ajax({
+            url: "/reviews/" + mno + "/all",
+            type: "GET",
+            success: function (reviews) {
+              let str = "";
+              $.each(reviews, function (idx, review) {
+                console.log(review);
+
+                str += '<div class="card-body" data-reviewnum="' + review.reviewnum + '" data-mid="' + review.mid + '">';
+                str += '  <h5 class="card-title">' + review.text;
+                str += '    <span>' + review.grade + '</span>';
+                str += '  </h5>';
+                str += '  <h6 class="card-subtitle mb-2 text-muted">' + review.nickname + '</h6>';
+                str += '  <p class="card-text">' + formatTime(review.regDate) + '</p>'
+                str += '</div>';
+              });//each end
+
+              $(".reviewList").html(str);
+            }//success end
+          });//ajax end
+
+        }//getMovieReviews end
+        getMovieReviews();
+
+
+        let reviewnum;
+
+        $(".reviewList").on("click", ".card-body", function () {
+          $(".reviewSaveBtn").hide();
+          $(".removeBtn, .modifyBtn").show();
+
+          let targetReview = $(this);
+          console.log("targetReview: ");
+          console.log(targetReview);
+
+          reviewnum = targetReview.data("reviewnum");
+          console.log(reviewnum);
+
+          inputMid.val(targetReview.data("mid"));
+          inputText.val(targetReview.find(".card-title").clone().children().remove().end().text());
+
+          let grade = targetReview.find('.card-title span').text();
+          console.log(grade);
+
+          $(".starrr a:nth-child(" + grade + ")").trigger('click');
+
+          $('.reviewModal').modal('show');
+
+        });//reviewList.click end
+
+        $(".modifyBtn").on("click", function () {
+          let data = {
+            reviewnum: reviewnum,
+            mno: mno,
+            grade: grade,
+            text: inputText.val(),
+            mid: inputMid.val()
+          };
+
+          $.ajax({
+            url: "/reviews/" + mno + "/" + reviewnum,
+            type: "PUT",
+            data: JSON.stringify(data),
+            contentType: "application/json; charset=utf-8",
+            dataType: "text",
+            success: function (result) {
+              console.log("result: " + result);
+              self.location.reload();
+            }
+          });
+
+          reviewModal.modal("hide");
+        });
+
+        $(".uploadResult li").on("click", function () {
+          let file = $(this).data('file');
+          $('.imageModal .modal-body').html("<img style='width:100%' src='/display?fileName=" + file + "&size=1'>");
+          $(".imageModal").modal("show");
+        });
+
+        $(".removeBtn").on("click", function () {
+
+          $.ajax({
+            url: "/reviews/" + mno + "/" + reviewnum,
+            type: "delete",
+            contentType: "application/json; charset=utf-8",
+            dataType: "text",
+            success: function (result) {
+              console.log("result: " + result);
+              self.location.reload();
+            }
+          });
+        });//removeBtn end
+
+        $(".removeMovieBtn").on("click", function () {
+
+          $(".movieModal").modal("show");
+
+          $(".movieRemoveBtn").on("click", function () {
+            $(".movieModal").modal("hide");
+
+            let data = {mno: mno};
+            $.ajax({
+              url: "/movie/remove",
+              type: "POST",
+              contentType: "application/json; charset=utf-8",
+              dataType: "text",
+              data: JSON.stringify(data),
+              success: function (result) {
+                alert(result);
+                window.location.href = "/movie/list"
+              }
+            });//ajax end
+
+          });//movieRemoveBtn end
+
+        });//removeMovieBtn end
+
+
+
+      });//document end
+
+
+
+    </script>
+
+
+  </th:block>
+
+</th:block>
+
+</html>
