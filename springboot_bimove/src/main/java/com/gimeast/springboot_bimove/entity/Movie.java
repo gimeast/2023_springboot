@@ -22,7 +22,12 @@ public class Movie extends BaseEntity {
 
     private String title;
 
-    @OneToMany(fetch = FetchType.LAZY, mappedBy = "movie", cascade = CascadeType.ALL)
+
+    @OneToMany(fetch = FetchType.LAZY,
+            mappedBy = "movie", //Poster의 movie가 연관관계의 주인이라는 것을 의미.
+            cascade = CascadeType.ALL, //현재 엔티티 객체의 상태를 하위 엔티티 객체들에게 전파하고 처리할수있다.(Movie 저장시 Poster와 같이 저장되게 해주는 설정.)
+            orphanRemoval = true //'orphanRemoval = true 는 참조가 없는 하위 엔티티 객체는 삭제할 것인가?'에 대한 설정.
+    )
     @Builder.Default
     private List<Poster> posterList = new ArrayList<>();
 
