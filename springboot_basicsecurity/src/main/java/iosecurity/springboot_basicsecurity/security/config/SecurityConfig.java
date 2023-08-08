@@ -1,17 +1,25 @@
 package iosecurity.springboot_basicsecurity.security.config;
 
+import lombok.extern.log4j.Log4j2;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
-import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.web.authentication.AuthenticationFailureHandler;
+import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.IOException;
 
 @Configuration
 @EnableWebSecurity
+@Log4j2
 public class SecurityConfig {
 
     @Bean
@@ -21,6 +29,27 @@ public class SecurityConfig {
                 .anyRequest().authenticated() // 인가정책
                 .and()
                 .formLogin() // 인증정책
+                .loginPage("/loginPage")
+                .usernameParameter("userId")
+                .passwordParameter("passwd")
+                .defaultSuccessUrl("/")
+                .failureUrl("/loginPage")
+                .loginProcessingUrl("/login_proc") // form의 action url
+                .successHandler(new AuthenticationSuccessHandler() {
+                    @Override
+                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                        log.info("[onAuthenticationSuccess] authentication.getName(): {}", authentication.getName()); // 인증에 성공한 username
+                        response.sendRedirect("/"); // 인증에 성공후 root 페이지로 이동
+                    }
+                })
+                .failureHandler(new AuthenticationFailureHandler() {
+                    @Override
+                    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+                        log.info("[onAuthenticationFailure] exception.getMessage(): {}", exception.getMessage());
+                        response.sendRedirect("/loginPage");
+                    }
+                })
+                .permitAll()
                 .and().build();
     }
 
