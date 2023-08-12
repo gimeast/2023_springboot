@@ -11,10 +11,13 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.authentication.logout.LogoutHandler;
+import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
 
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.IOException;
 
 @Configuration
@@ -25,32 +28,51 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                .authorizeRequests()
-                .anyRequest().authenticated() // 인가정책
+                    .authorizeRequests()
+                    .anyRequest().authenticated() // 인가정책
                 .and()
-                .formLogin() // 인증정책
-                .loginPage("/loginPage")
-                .usernameParameter("userId")
-                .passwordParameter("passwd")
-                .defaultSuccessUrl("/")
-                .failureUrl("/loginPage")
-                .loginProcessingUrl("/login_proc") // form의 action url
-                .successHandler(new AuthenticationSuccessHandler() {
-                    @Override
-                    public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
-                        log.info("[onAuthenticationSuccess] authentication.getName(): {}", authentication.getName()); // 인증에 성공한 username
-                        response.sendRedirect("/"); // 인증에 성공후 root 페이지로 이동
-                    }
-                })
-                .failureHandler(new AuthenticationFailureHandler() {
-                    @Override
-                    public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
-                        log.info("[onAuthenticationFailure] exception.getMessage(): {}", exception.getMessage());
-                        response.sendRedirect("/loginPage");
-                    }
-                })
-                .permitAll()
-                .and().build();
+                    .formLogin() // 인증정책
+                    .loginPage("/loginPage")
+                    .usernameParameter("userId")
+                    .passwordParameter("passwd")
+                    .defaultSuccessUrl("/")
+                    .failureUrl("/loginPage")
+                    .loginProcessingUrl("/login_proc") // form의 action url
+                    .successHandler(new AuthenticationSuccessHandler() {
+                        @Override
+                        public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                            log.info("[onAuthenticationSuccess] authentication.getName(): {}", authentication.getName()); // 인증에 성공한 username
+                            response.sendRedirect("/"); // 인증에 성공후 root 페이지로 이동
+                        }
+                    })
+                    .failureHandler(new AuthenticationFailureHandler() {
+                        @Override
+                        public void onAuthenticationFailure(HttpServletRequest request, HttpServletResponse response, AuthenticationException exception) throws IOException, ServletException {
+                            log.info("[onAuthenticationFailure] exception.getMessage(): {}", exception.getMessage());
+                            response.sendRedirect("/loginPage");
+                        }
+                    })
+                    .permitAll()
+                .and()
+                    .logout()
+                    .logoutUrl("/logout")
+                    .logoutSuccessUrl("/loginPage")
+                    .addLogoutHandler(new LogoutHandler() {
+                        @Override
+                        public void logout(HttpServletRequest request, HttpServletResponse response, Authentication authentication) {
+                            HttpSession session = request.getSession();
+                            session.invalidate();
+                        }
+                    })
+                    .logoutSuccessHandler(new LogoutSuccessHandler() {
+                        @Override
+                        public void onLogoutSuccess(HttpServletRequest request, HttpServletResponse response, Authentication authentication) throws IOException, ServletException {
+                            response.sendRedirect("/loginPage");
+                        }
+                    })
+                    .deleteCookies("remember-me")
+                .and()
+                .build();
     }
 
     @Bean
