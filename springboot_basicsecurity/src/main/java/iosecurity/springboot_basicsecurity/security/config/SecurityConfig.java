@@ -1,6 +1,7 @@
 package iosecurity.springboot_basicsecurity.security.config;
 
 import lombok.extern.log4j.Log4j2;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
@@ -8,6 +9,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -25,6 +27,13 @@ import java.io.IOException;
 @Log4j2
 public class SecurityConfig {
 
+    private final UserDetailsService userDetailsService;
+
+    @Autowired
+    public SecurityConfig(UserDetailsService userDetailsService) {
+        this.userDetailsService = userDetailsService;
+    }
+
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
@@ -32,7 +41,7 @@ public class SecurityConfig {
                     .anyRequest().authenticated() // 인가정책
                 .and()
                     .formLogin() // 인증정책
-                    .loginPage("/loginPage")
+//                    .loginPage("/loginPage")
                     .usernameParameter("userId")
                     .passwordParameter("passwd")
                     .defaultSuccessUrl("/")
@@ -72,6 +81,12 @@ public class SecurityConfig {
                     })
                     .deleteCookies("remember-me")
                 .and()
+                    .rememberMe()
+                    .rememberMeParameter("remember")
+                    .tokenValiditySeconds(3600)
+                    .userDetailsService(userDetailsService)
+                    .alwaysRemember(false)
+                    .and()
                 .build();
     }
 
