@@ -82,18 +82,30 @@ public class SecurityConfig {
                     .deleteCookies("remember-me")
                 .and()
                     .rememberMe()
-                    .rememberMeParameter("remember")
-                    .tokenValiditySeconds(3600)
+                    .rememberMeParameter("remember") //파라미터
+                    .tokenValiditySeconds(3600) //1시간
                     .userDetailsService(userDetailsService)
                     .alwaysRemember(false)
-                    .and()
+                .and()
+                //[동시 세션 제어 전략] 1.이전 사용자 세션만료, 2.현재 사용자 인증 실패
+                    .sessionManagement() //세션관리 기능이 작동한다
+//                    .maximumSessions(1) //최대 허용 가능 세션 수 -1:무제한 로그인세션 허용
+//                    .maxSessionsPreventsLogin(false) //동시 로그인 차단함, false:기존 세션 만료(default)
+//                    .expiredUrl("/expired") //세션이 만료된 경우 이동 할 페이지
+//                    .and()
+//                    .invalidSessionUrl("/invalid") //세션이 유효하지 않을때 이동할 페이지
+
+                        .sessionFixation() //[세션고정보호]
+//                      .none() //이 none 설정은 브라우저 공격을 받을 수 있다. 위험하다.
+                        .changeSessionId() //기본값. 로그인 하면 새로운 세션을 생성한다. 안전하다.
+                .and()
                 .build();
     }
 
     @Bean
     public WebSecurityCustomizer configure() { //인증과 인가가 모두 적용되기전에 동작하는 설정이다
         return web -> web.ignoring()
-                .antMatchers("/api-docs/**","/swagger-ui/**" ,"/sign-api/exception");//인증, 인가를 무시하는 경로를 설정한다
+                .antMatchers("/expired", "/invalid", "/loginPage");//인증, 인가를 무시하는 경로를 설정한다
     }
 
 }
