@@ -9,7 +9,12 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.config.annotation.web.configuration.WebSecurityCustomizer;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.provisioning.InMemoryUserDetailsManager;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -27,18 +32,48 @@ import java.io.IOException;
 @Log4j2
 public class SecurityConfig {
 
-    private final UserDetailsService userDetailsService;
+//    private final UserDetailsService userDetailsService;
 
-    @Autowired
-    public SecurityConfig(UserDetailsService userDetailsService) {
-        this.userDetailsService = userDetailsService;
+//    @Autowired
+//    public SecurityConfig(UserDetailsService userDetailsService) {
+//        this.userDetailsService = userDetailsService;
+//    }
+
+    @Bean
+    public PasswordEncoder passwordEncoder() {
+        return new BCryptPasswordEncoder();
     }
+
+    @Bean
+    public UserDetailsService inMemoryUsers() {
+        UserDetails user = User.builder()
+                .username("user")
+                .password(passwordEncoder().encode("1"))
+                .roles("USER")
+                .build();
+        UserDetails sys = User.builder()
+                .username("sys")
+                .password(passwordEncoder().encode("1"))
+                .roles("SYS", "USER")
+                .build();
+        UserDetails admin = User.builder()
+                .username("admin")
+                .password(passwordEncoder().encode("1"))
+                .roles("ADMIN", "SYS", "USER")
+                .build();
+
+        return new InMemoryUserDetailsManager(user, sys, admin);
+    }
+
 
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) throws Exception {
         return httpSecurity
-                    .authorizeRequests()
-                    .anyRequest().authenticated() // 인가정책
+                    .authorizeRequests() // 인가정책
+                    .antMatchers("/user").hasRole("USER")
+                    .antMatchers("/admin/pay").hasRole("ADMIN")
+                    .antMatchers("/admin/**").access("hasRole('ADMIN') or hasRole('SYS')")
+                    .anyRequest().authenticated() //어떤 요청이든 인증이 되었는지를 확인하는 설정
                 .and()
                     .formLogin() // 인증정책
 //                    .loginPage("/loginPage")
@@ -84,7 +119,8 @@ public class SecurityConfig {
                     .rememberMe()
                     .rememberMeParameter("remember") //파라미터
                     .tokenValiditySeconds(3600) //1시간
-                    .userDetailsService(userDetailsService)
+                    .userDetailsService(inMemoryUsers())
+//                    .userDetailsService(userDetailsService)
                     .alwaysRemember(false)
                 .and()
                 //[동시 세션 제어 전략] 전략1.이전 사용자 세션만료 / 전략2.현재 사용자 인증 실패
