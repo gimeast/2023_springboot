@@ -87,17 +87,17 @@ public class SecurityConfig {
                     .userDetailsService(userDetailsService)
                     .alwaysRemember(false)
                 .and()
-                //[동시 세션 제어 전략] 1.이전 사용자 세션만료, 2.현재 사용자 인증 실패
+                //[동시 세션 제어 전략] 전략1.이전 사용자 세션만료 / 전략2.현재 사용자 인증 실패
                     .sessionManagement() //세션관리 기능이 작동한다
-//                    .maximumSessions(1) //최대 허용 가능 세션 수 -1:무제한 로그인세션 허용
-//                    .maxSessionsPreventsLogin(false) //동시 로그인 차단함, false:기존 세션 만료(default)
+                    .maximumSessions(1) //최대 허용 가능 세션 수 -1:무제한 로그인세션 허용
+                    .maxSessionsPreventsLogin(true) //true:동시 로그인 차단함 2번전략, false:기존 세션 만료(default) 1번전략
 //                    .expiredUrl("/expired") //세션이 만료된 경우 이동 할 페이지
-//                    .and()
+                    .and()
 //                    .invalidSessionUrl("/invalid") //세션이 유효하지 않을때 이동할 페이지
 
-                        .sessionFixation() //[세션고정보호]
+//                    .sessionFixation() //[세션고정보호]
 //                      .none() //이 none 설정은 브라우저 공격을 받을 수 있다. 위험하다.
-                        .changeSessionId() //기본값. 로그인 하면 새로운 세션을 생성한다. 안전하다.
+//                    .changeSessionId() //기본값. 세션 고정 보호. 로그인 하면 새로운 세션을 생성한다. 안전하다.
                 .and()
                 .build();
     }
