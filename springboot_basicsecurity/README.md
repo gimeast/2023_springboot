@@ -20,7 +20,16 @@
 - 로그아웃 처리
 - 즉시 오류 페이지 응답
 
-
+### 인가 API - 권한 설정
+1. 선언적 방식
+   - URL
+     - http.antMatchers("/users/**").hasRole("USER")
+   - Method
+     - @PreAuthorize("hasRole('USER')")
+     
+2. 동적 방식 - DB 연동 프로그래밍
+   - URL
+   - Method
 
 
 
